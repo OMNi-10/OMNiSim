@@ -1,0 +1,129 @@
+
+
+classdef OMNiSim
+    properties (Access = public)
+        system System = System.empty;
+    end
+
+    properties (Access = protected)
+        T (:, 1)
+        X (:, :)
+    end
+
+    methods (Access = public)
+        function obj = OwenSim(system)
+            arguments
+                system (1, :) System
+            end
+            if (length(system) > 1)
+                obj.system = SystemManager("SM", system, 3);
+                warning("Assuming 3 controllable dimensions")
+            else
+                obj.system = system;
+            end
+        end
+
+        function obj = Setup(obj)
+            obj.system = obj.system.setup();
+        end
+
+        function obj = Simulate(obj, X0, t0, tf)
+            obj.system = obj.system.setup();
+            [obj.T, obj.X] = ode45(@obj.RHS, [t0, tf], X0);
+        end
+
+        function dispLbls(obj)
+            disp(obj.system.S_name + " labels:")
+            for i = 1:obj.system.S_dims
+                lbl = obj.system.S_lbls(i);
+                disp("    (" + i + "): " + lbl)
+            end
+        end
+
+        function x = get_var(obj, var)
+            if isstring(var)
+                i = find(obj.system.S_lbls()==var);
+                if isempty(i)
+                    warning("Unable to find variable with label '" + var + "' in system '" + obj.system.S_name + ".'")
+                elseif (length(i) > 1)
+                    warning("FOund more than one variable with label '" + var + "' in system '" + obj.system.S_name + ".'")
+                end
+            else
+                i = var;
+            end
+
+            x = obj.X(:, i);
+        end
+
+        function plotPath(obj, pTrkr, n)
+            arguments
+                obj 
+                pTrkr PathTracker
+                n
+            end
+
+            X = obj.get_var(pTrkr.S_indx + 0);
+            Y = obj.get_var(pTrkr.S_indx + 1);
+            Z = obj.get_var(pTrkr.S_indx + 2);
+
+            OwenSim.plotXYZ(X, Y, Z, n);
+        end
+
+        function axes = plotVars(obj, target, vars, location)
+            arguments
+                obj 
+                target System
+                vars (1, :) string
+                location
+            end
+
+            axes = zeros(1, length(vars));
+
+            if isgraphics(location, "axes")
+                axes = location;
+                if (length(vars) ~= length(axes))
+                    warning("Vars and Axes are of different lengths")
+                end
+            else
+                figure(location)
+                for j = 1:length(vars)
+                    axes(j) = subplot(size(vars, 2), size(vars, 1), j, "replace");
+                end
+            end
+
+            for j = 1:length(vars)
+                var = vars(j);
+                i = find(target.S_lbls == var);
+                if isempty(i)
+                    warning("Unable to find variable with label '" + var + "' in system '" + target.S_name + ".'")
+                elseif (length(i) > 1)
+                    warning("Found more than one variable with label '" + var + "' in system '" + target.S_name + ".'")
+                end
+                plot(axes(j), obj.T, obj.X(:,i));
+                ylabel(axes(j), var);
+            end
+        end
+    end
+
+    methods (Access = protected)
+        function dxdt = RHS(obj, t, X)
+            u = obj.system.eval_ctrl(t, X);
+            dxdt = obj.system.eval_dxdt(t, X, u);
+        end
+    end
+
+    methods (Static)
+        function plotXYZ(X, Y, Z, n)
+            figure(n)
+            plot3(X, Y, Z);
+            hold on
+            z0 = min(Z);
+            plot3(X, Y, zeros(size(X)) + z0);
+            for i = 1:100:length(X)
+                plot3([X(i), X(i)], [Y(i), Y(i)], [z0, Z(i)], Color=[224, 224, 224]/255)
+            end
+            hold off
+            axis("equal")
+        end
+    end
+end
