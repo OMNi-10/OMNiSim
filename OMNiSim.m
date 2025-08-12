@@ -109,6 +109,7 @@ classdef OMNiSim
 
     methods (Access = protected)
         function dxdt = RHS(obj, t, X)
+            % disp(t)
             u = obj.system.eval_ctrl(t, X);
             dxdt = obj.system.eval_dxdt(t, X, u);
         end
