@@ -6,30 +6,42 @@ classdef NonLinDynSys < Dynamics
     methods
         function obj = NonLinDynSys(plane)
             obj.object = plane;
-            obj.S_dims = 9;
-            obj.S_lbls = ["u", "v", "w", "p", "q", "r", "phi", "theta", "psi"];
+            
+            obj.S_dims = 12;
+            obj.S_lbls = [
+                "x", "y", "z", ...
+                "u", "v", "w", ...
+                "phi", "theta", "psi", ...
+                "p", "q", "r"
+                ];
         end
 
-        function [X, Y, Z, L, M, N] = eval_XYZLMN(obj, t, X, U)
+        function XYZLMN = eval_XYZLMN(obj, t, X, U)
     
             x = X(obj.S_indx: obj.S_indx + obj.S_dims - 1);
             
             % Unpack variables
-            uvw = x(1:3);
+            xyz = x(1:3);
+            uvw = x(4:6);
+            ptp = x(7:9);
+            pqr = x(10:12);
+
+            if norm(pqr) > 1
+                warning("High angular rates, expect innacurate results.")
+            end
+
             u = uvw(1);
             v = uvw(2);
             w = uvw(3);
-    
-            pqr = x(4:6);
+
             p = pqr(1);
             q = pqr(2);
             r = pqr(3);
-    
-            ptp = x(7:9);
+
             phi = ptp(1);
             theta = ptp(2);
             psi = ptp(3);
-    
+
             d_e = U(1);
             d_a = U(2);
             d_r = U(3);
@@ -74,14 +86,24 @@ classdef NonLinDynSys < Dynamics
             S = obj.object.planform_area;
             b = obj.object.wing_span;
             c = obj.object.chord_length;
-    
-            X = -C_long(2) * Q*S;
-            Y = C_ltrl(1) * Q*S;
-            Z = C_long(1) * Q*S;
-    
-            L = C_ltrl(2) * Q*S*c;
-            M = C_long(3) * Q*S*b;
-            N = C_ltrl(3) * Q*S*b;
+            
+
+            C_L = C_long(1);
+            Lift = C_L * Q*S;
+            C_D = abs(C_long(2));
+            Drag = C_D * Q*S * 10;
+            C_S = C_ltrl(1) * Q*S;
+            Side = C_S * Q*S;
+
+            l_w = C_ltrl(2) * Q*S*c;
+            m_w = C_long(3) * Q*S*b;
+            n_w = C_ltrl(3) * Q*S*b;
+            
+            R = EulerAngle([3, 2], [beta, alpha]);
+            XYZ = R * [-Drag; Side; -Lift];
+            LMN = R * [l_w; m_w; n_w];
+
+            XYZLMN = [XYZ; LMN];
         end
     end
 end

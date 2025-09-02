@@ -1,6 +1,6 @@
 
 function aircraft = B747NL()
-    aircraft = AircraftNL("Boeing 747 @ MSL, M=0.25");
+    aircraft = AircraftNL("Boeing 747 @ MSL, M=0.5");
 
     aircraft.m = 636600 / 32.2;
     aircraft.I = [
@@ -14,9 +14,9 @@ function aircraft = B747NL()
     aircraft.chord_length = 27.31;
 
     aircraft.A_long = [
-        1.110  5.700  6.700  5.400 -0.810  0.338
-        0.102  0.660  0.000  0.000  0.250  0.000
-        0.000 -1.260 -3.200 -20.80  0.270 -1.340
+        0.680  4.670  6.530  5.130 -.0875  0.356
+        .0393  0.366  0.000  0.000  0.000  0.000
+        0.000 -1.146 -3.350 -20.70  0.121 -1.430
     ];
 
     aircraft.A_ltrl = [

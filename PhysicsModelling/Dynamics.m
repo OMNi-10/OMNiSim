@@ -69,6 +69,7 @@ classdef Dynamics < System
             
             % Get external forces/moments
             XYZLMN = obj.eval_XYZLMN(t, X, U);
+            % XYZ = XYZLMN(1:3)
             X = XYZLMN(1);
             Y = XYZLMN(2);
             Z = XYZLMN(3);
@@ -81,12 +82,12 @@ classdef Dynamics < System
             if obj.warn
                 warning("Assuming g =32.2")
             end
-            R = EulerAngle([3 2 1], [phi theta psi]);
+            R = EulerAngle([3 2 1], [psi theta phi]);
             G = R * [0; 0; -m*g];
 
             % FINDING DERIVATIVES
             % Position
-            R = EulerAngle([3, 2, 1, 1], [phi, theta, psi, pi]);
+            R = EulerAngle([3, 2, 1, 1], [psi, theta, phi, pi*0]);
             dxyzdt = inv(R) * uvw;
 
             % Velocity
@@ -123,7 +124,7 @@ classdef Dynamics < System
             R = R';
         end
 
-        function A = KE(phi, theta, psi)
+        function A = KE(phi, theta, psi) % Euler rate Kinematics
             A = [
                 1, sin(phi)*tan(theta), cos(phi)*tan(theta)
                 0, cos(phi), -sin(phi)
